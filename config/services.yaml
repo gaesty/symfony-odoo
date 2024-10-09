@@ -4,6 +4,10 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    odoo_url: '%env(ODOO_URL)%'
+    odoo_db: '%env(ODOO_DB)%'
+    odoo_user: '%env(ODOO_USER)%'
+    odoo_password: '%env(ODOO_PASSWORD)%'
 
 services:
     # default configuration for services in *this* file
@@ -22,3 +26,10 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+
+    App\Service\OdooService:
+        arguments:
+            $odooUrl: '%env(ODOO_URL)%'
+            $odooDb: '%env(ODOO_DB)%'
+            $odooUser: '%env(ODOO_USER)%'
+            $odooPassword: '%env(ODOO_PASSWORD)%'

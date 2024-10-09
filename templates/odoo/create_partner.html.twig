@@ -1,0 +1,27 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Create Partner{% endblock %}
+
+{% block body %}
+<h1>Create Partner</h1>
+
+{# Create a form for adding a partner #}
+<form action="{{ path('odoo_partner_create') }}" method="post">
+    <div>
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required>
+    </div>
+    <div>
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
+    </div>
+    <div>
+        <label for="phone">Phone:</label>
+        <input type="tel" id="phone" name="phone" required>
+    </div>
+    <button type="submit">Create Partner</button>
+</form>
+
+{# Link to go back to the partner list #}
+<a href="{{ path('odoo_partners') }}">Back to Partner List</a>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<h1>Partners</h1>
+<table>
+  <tr>
+    <th>Id</th>
+    <th>Name</th>
+    <th>Email</th>
+    <th>Phone</th>
+    <th></th>
+    <th></th>
+  </tr>
+  {% for res in result %}
+  <tr>
+    <td>
+      {# <a href="odoo_partner/{{ res.id }}"> #}
+      <a href="{{ path('odoo_partner_view', {'id': res.id}) }}">
+        {{ res.id|e }}
+      </a>
+    </td>
+    <td>{{ res.name|e }}</td>
+    <td>{{ res.email|e }}</td>
+    <td>{{ res.phone|e }}</td>
+    <td>
+      <a href="{{ path('odoo_partner_update', {'id': res.id}) }}">
+        <button>Edit</button>
+      </a>
+    </td>
+    <td>
+      <form action="{{ path('odoo_partner_delete', {'id': res.id}) }}" method="post" onsubmit="return confirm('Are you sure you want to delete this partner?');">
+          <button type="submit">Delete</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}
