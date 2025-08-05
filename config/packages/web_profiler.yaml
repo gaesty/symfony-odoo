@@ -1,17 +1,27 @@
 when@dev:
     web_profiler:
-        toolbar: false
+        toolbar: false  # Désactiver la barre d'outils
         intercept_redirects: false
 
     framework:
         profiler:
-            only_exceptions: false
-            collect_serializer_data: false
+            only_exceptions: true  # Collecter les données uniquement pour les exceptions
+            collect: false  # Désactiver la collecte des données
 
 when@test:
     web_profiler:
         toolbar: false
         intercept_redirects: false
-
+    
     framework:
-        profiler: { collect: false }
+        profiler: 
+            collect: false
+            only_exceptions: true
+
+when@prod:
+    web_profiler:
+        toolbar: false
+        intercept_redirects: false
+    framework:
+        profiler:
+            collect: false

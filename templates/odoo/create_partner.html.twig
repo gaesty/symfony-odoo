@@ -1,27 +1,140 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Create Partner{% endblock %}
+{% block title %}Création d'un partenaire{% endblock %}
 
 {% block body %}
-<h1>Create Partner</h1>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="fw-bold text-primary">
+            <i class="fas fa-user-plus me-2"></i> Nouveau partenaire
+        </h1>
+        <a href="{{ path('odoo_partners') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Retour à la liste
+        </a>
+    </div>
 
-{# Create a form for adding a partner #}
-<form action="{{ path('odoo_partner_create') }}" method="post">
-    <div>
-        <label for="name">Name:</label>
-        <input type="text" id="name" name="name" required>
-    </div>
-    <div>
-        <label for="email">Email:</label>
-        <input type="email" id="email" name="email" required>
-    </div>
-    <div>
-        <label for="phone">Phone:</label>
-        <input type="tel" id="phone" name="phone" required>
-    </div>
-    <button type="submit">Create Partner</button>
-</form>
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="alert alert-{{ label }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endfor %}
 
-{# Link to go back to the partner list #}
-<a href="{{ path('odoo_partners') }}">Back to Partner List</a>
+    <div class="card shadow-sm">
+        <div class="card-header bg-white">
+            <h5 class="card-title mb-0">Informations du partenaire</h5>
+        </div>
+        <div class="card-body">
+            <form action="{{ path('odoo_partner_create') }}" method="POST" class="needs-validation" novalidate>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Nom <span class="text-danger">*</span></label>
+                            <input type="text" id="name" name="name" class="form-control" required>
+                            <div class="invalid-feedback">Le nom est requis</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="company_type" class="form-label">Type</label>
+                            <select id="company_type" name="company_type" class="form-select">
+                                <option value="company">Entreprise</option>
+                                <option value="person">Individu</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" id="email" name="email" class="form-control">
+                            <div class="invalid-feedback">Veuillez saisir une adresse email valide</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">Téléphone</label>
+                            <input type="tel" id="phone" name="phone" class="form-control">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="mobile" class="form-label">Mobile</label>
+                            <input type="tel" id="mobile" name="mobile" class="form-control">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="website" class="form-label">Site web</label>
+                            <input type="url" id="website" name="website" class="form-control">
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="street" class="form-label">Adresse</label>
+                            <input type="text" id="street" name="street" class="form-control">
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label for="city" class="form-label">Ville</label>
+                                    <input type="text" id="city" name="city" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="zip" class="form-label">Code postal</label>
+                                    <input type="text" id="zip" name="zip" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="country_id" class="form-label">Pays</label>
+                            <select id="country_id" name="country_id" class="form-select">
+                                <option value="">-- Sélectionner un pays --</option>
+                                {% for country in countryList %}
+                                    <option value="{{ country.id }}">{{ country.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="vat" class="form-label">Numéro de TVA</label>
+                            <input type="text" id="vat" name="vat" class="form-control">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="comment" class="form-label">Commentaires</label>
+                            <textarea id="comment" name="comment" class="form-control" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end mt-4">
+                    <a href="{{ path('odoo_partners') }}" class="btn btn-outline-secondary me-2">Annuler</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Créer le partenaire
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Validation du formulaire
+            var form = document.querySelector('.needs-validation');
+            
+            form.addEventListener('submit', function(event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            });
+        });
+    </script>
 {% endblock %}

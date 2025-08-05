@@ -1,0 +1,891 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ result.name }} | Détails du produit{% endblock %}
+
+{% block body %}
+<div class="container py-4">
+    <!-- En-tête avec nom et actions -->
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-8">
+            <h1 class="display-6 fw-bold text-primary">
+                <i class="fas fa-box me-2"></i>{{ result.display_name }}
+            </h1>
+            {% if result.default_code %}
+                <p class="text-muted mb-0">Référence: {{ result.default_code }}</p>
+            {% endif %}
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="btn-group">
+                <a href="{{ path('odoo_inventory') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> Retour
+                </a>
+                <a href="#" class="btn btn-warning">
+                    <i class="fas fa-edit me-1"></i> Modifier
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="alert alert-{{ label }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endfor %}
+
+    <!-- Structure des onglets -->
+    <ul class="nav nav-tabs mb-4" id="productTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab" aria-controls="general" aria-selected="true">
+                <i class="fas fa-info-circle me-1"></i>Général
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="inventory-tab" data-bs-toggle="tab" data-bs-target="#inventory" type="button" role="tab" aria-controls="inventory" aria-selected="false">
+                <i class="fas fa-warehouse me-1"></i>Inventaire
+            </button>
+        </li>
+        {% if result.sale_ok %}
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="sales-tab" data-bs-toggle="tab" data-bs-target="#sales" type="button" role="tab" aria-controls="sales" aria-selected="false">
+                <i class="fas fa-shopping-basket me-1"></i>Commercial
+            </button>
+        </li>
+        {% endif %}
+        {% if result.purchase_ok %}
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="purchase-tab" data-bs-toggle="tab" data-bs-target="#purchase" type="button" role="tab" aria-controls="purchase" aria-selected="false">
+                <i class="fas fa-shopping-cart me-1"></i>Achats
+            </button>
+        </li>
+        {% endif %}
+        {% if result.final_inspection is defined or result.hs_code is defined or result.country_of_origin is defined or result.taric_code is defined %}
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="technical-tab" data-bs-toggle="tab" data-bs-target="#technical" type="button" role="tab" aria-controls="technical" aria-selected="false">
+                <i class="fas fa-cogs me-1"></i>Technique
+            </button>
+        </li>
+        {% endif %}
+        {% if result.product_variant_ids and result.product_variant_ids|length > 1 %}
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="variants-tab" data-bs-toggle="tab" data-bs-target="#variants" type="button" role="tab" aria-controls="variants" aria-selected="false">
+                <i class="fas fa-cubes me-1"></i>Variantes
+            </button>
+        </li>
+        {% endif %}
+    </ul>
+
+    <!-- Contenu des onglets -->
+    <div class="tab-content" id="productTabsContent">
+        <!-- Onglet Général -->
+        <div class="tab-pane fade show active" id="general" role="tabpanel" aria-labelledby="general-tab">
+            <div class="row">
+                <!-- Informations générales -->
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Informations générales</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="fw-bold text-muted small mb-1">ID Produit</label>
+                                        <div>#{{ result.id }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="fw-bold text-muted small mb-1">Statut</label>
+                                        <div>
+                                            <span class="badge {% if result.active %}bg-success{% else %}bg-secondary{% endif %}">
+                                                {{ result.active ? 'Actif' : 'Inactif' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="fw-bold text-muted small mb-1">Type</label>
+                                        <div>
+                                            {% set type_labels = {
+                                                'product': 'Produit stockable',
+                                                'consu': 'Consommable',
+                                                'service': 'Service'
+                                            } %}
+                                            {{ type_labels[result.type] ?? result.type ?? 'Non défini' }}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% if result.type is defined %}
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="fw-bold text-muted small mb-1">Type détaillé</label>
+                                        <div>{{ result.type }}</div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            {% if result.create_date or result.create_uid %}
+                            <div class="row mb-3">
+                                {% if result.create_date %}
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="fw-bold text-muted small mb-1">Date de création</label>
+                                        <div>{{ result.create_date|date('d/m/Y H:i') }}</div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% if result.create_uid %}
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="fw-bold text-muted small mb-1">Créé par</label>
+                                        <div>
+                                            {% if result.create_uid is iterable and result.create_uid[1] is defined %}
+                                                {{ result.create_uid[1] }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="fw-bold text-muted small mb-1">Vente</label>
+                                        <div>
+                                            <span class="badge {% if result.sale_ok %}bg-success{% else %}bg-secondary{% endif %}">
+                                                {{ result.sale_ok ? 'Oui' : 'Non' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="fw-bold text-muted small mb-1">Achat</label>
+                                        <div>
+                                            <span class="badge {% if result.purchase_ok %}bg-success{% else %}bg-secondary{% endif %}">
+                                                {{ result.purchase_ok ? 'Oui' : 'Non' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% if result.categ_id %}
+                            <div class="mb-3">
+                                <label class="fw-bold text-muted small mb-1">Catégorie</label>
+                                <div>
+                                    {% if result.categ_id is iterable and result.categ_id[1] is defined %}
+                                        {{ result.categ_id[1] }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inventaire et prix -->
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0"><i class="fas fa-tags me-2"></i>Prix et stock</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="fw-bold text-muted small mb-1">Prix de vente</label>
+                                        <div class="fs-4 fw-bold">
+                                            {% if result.list_price is defined %}
+                                                {{ result.list_price }} 
+                                                {% if result.currency_id is defined %}
+                                                    {% if result.currency_id is iterable and result.currency_id[1] is defined %}
+                                                        {{ result.currency_id[1] }}
+                                                    {% else %}
+                                                        €
+                                                    {% endif %}
+                                                {% else %}
+                                                    €
+                                                {% endif %}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="fw-bold text-muted small mb-1">Coût</label>
+                                        <div>
+                                            {% if result.standard_price is defined %}
+                                                {{ result.standard_price }}
+                                                {% if result.cost_currency_id is defined %}
+                                                    {% if result.cost_currency_id is iterable and result.cost_currency_id[1] is defined %}
+                                                        {{ result.cost_currency_id[1] }}
+                                                    {% else %}
+                                                        €
+                                                    {% endif %}
+                                                {% else %}
+                                                    €
+                                                {% endif %}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="fw-bold text-muted small mb-1">Quantité disponible</label>
+                                        <div class="fs-5 fw-semibold">
+                                            {% if result.qty_available is defined %}
+                                                {{ result.qty_available }}
+                                                {% if result.uom_id is defined and result.uom_id is iterable and result.uom_id[1] is defined %}
+                                                    {{ result.uom_id[1] }}
+                                                {% endif %}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="fw-bold text-muted small mb-1">Suivi</label>
+                                        <div>
+                                            {% set tracking_labels = {
+                                                'none': 'Aucun',
+                                                'lot': 'Par lot',
+                                                'serial': 'Par numéro de série'
+                                            } %}
+                                            {{ tracking_labels[result.tracking] ?? result.tracking }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                {% if result.uom_id %}
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="fw-bold text-muted small mb-1">Unité de mesure</label>
+                                        <div>
+                                            {% if result.uom_id is iterable and result.uom_id[1] is defined %}
+                                                {{ result.uom_id[1] }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% if result.uom_po_id %}
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="fw-bold text-muted small mb-1">Unité d'achat</label>
+                                        <div>
+                                            {% if result.uom_po_id is iterable and result.uom_po_id[1] is defined %}
+                                                {{ result.uom_po_id[1] }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {% if result.description %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0"><i class="fas fa-file-alt me-2"></i>Description générale</h5>
+                        </div>
+                        <div class="card-body">
+                            {{ result.description|raw }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Onglet Inventaire -->
+        <div class="tab-pane fade" id="inventory" role="tabpanel" aria-labelledby="inventory-tab">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0"><i class="fas fa-warehouse me-2"></i>Inventaire et logistique</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <label class="fw-bold text-muted small mb-1">Suivi d'inventaire</label>
+                                        <div>
+                                            {% set tracking_labels = {
+                                                'none': 'Aucun',
+                                                'lot': 'Par lots',
+                                                'serial': 'Par numéro de série'
+                                            } %}
+                                            {{ tracking_labels[result.tracking] ?? result.tracking }}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <label class="fw-bold text-muted small mb-1">Poids</label>
+                                        <div>{{ result.weight }} kg</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <label class="fw-bold text-muted small mb-1">Volume</label>
+                                        <div>{{ result.volume }} m³</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <label class="fw-bold text-muted small mb-1">Version</label>
+                                        <div>{{ result.version_name ?? result.version ?? '-' }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                {% if result.shelf_life is defined %}
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="fw-bold text-muted small mb-1">Durée de stockage</label>
+                                        <div>{{ result.shelf_life }} {{ result.shelf_life_type }}</div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if result.responsible_id is defined %}
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="fw-bold text-muted small mb-1">Responsable</label>
+                                        <div>
+                                            {% if result.responsible_id is iterable and result.responsible_id[1] is defined %}
+                                                {{ result.responsible_id[1] }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="row mt-4">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="fw-bold text-muted small mb-1">Quantité disponible</label>
+                                        <div class="fs-5 fw-semibold">
+                                            {% if result.qty_available is defined %}
+                                                {{ result.qty_available }}
+                                            {% else %}
+                                                0
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% if result.virtual_available is defined %}
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="fw-bold text-muted small mb-1">Quantité prévisionnelle</label>
+                                        <div>{{ result.virtual_available }}</div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% if result.incoming_qty is defined or result.outgoing_qty is defined %}
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="fw-bold text-muted small mb-1">Entrées/Sorties</label>
+                                        <div>
+                                            <span class="text-success">+{{ result.incoming_qty|default('0') }}</span> / 
+                                            <span class="text-danger">-{{ result.outgoing_qty|default('0') }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            {% if result.description_picking is defined and result.description_picking %}
+                            <div class="mt-4">
+                                <h6 class="fw-bold">Description pour les réceptions</h6>
+                                <div class="p-2 bg-light rounded">
+                                    {{ result.description_picking|raw }}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Onglet Commercial -->
+        {% if result.sale_ok %}
+        <div class="tab-pane fade" id="sales" role="tabpanel" aria-labelledby="sales-tab">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0"><i class="fas fa-shopping-basket me-2"></i>Informations commerciales</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="fw-bold text-muted small mb-1">Prix de vente</label>
+                                        <div class="fs-4 fw-bold">
+                                            {% if result.list_price is defined %}
+                                                {{ result.list_price }} 
+                                                {% if result.currency_id is defined and result.currency_id is iterable and result.currency_id[1] is defined %}
+                                                    {{ result.currency_id[1] }}
+                                                {% else %}
+                                                    €
+                                                {% endif %}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {% if result.invoice_policy is defined %}
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="fw-bold text-muted small mb-1">Politique de facturation</label>
+                                        <div>
+                                            {% if result.invoice_policy == 'order' %}
+                                                Quantités commandées
+                                            {% elseif result.invoice_policy == 'delivery' %}
+                                                Quantités livrées
+                                            {% else %}
+                                                {{ result.invoice_policy }}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            {% if result.taxes_id is defined and result.taxes_id|length > 0 %}
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <div class="mb-3">
+                                        <label class="fw-bold text-muted small mb-1">Taxes de vente</label>
+                                        <div>
+                                            {% for tax_id in result.taxes_id %}
+                                                <span class="badge bg-info me-1">{{ tax_id }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if additional is defined and additional.customers is defined and additional.customers|length > 0 %}
+                            <div class="mt-4">
+                                <h6 class="fw-bold">Clients</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Client</th>
+                                                <th>Prix</th>
+                                                <th>Devise</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for customer in additional.customers %}
+                                            <tr>
+                                                <td>
+                                                    {% if customer.name is iterable and customer.name[1] is defined %}
+                                                        {{ customer.name[1] }}
+                                                    {% else %}
+                                                        -
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ customer.price|default('-') }}</td>
+                                                <td>
+                                                    {% if customer.currency_id is iterable and customer.currency_id[1] is defined %}
+                                                        {{ customer.currency_id[1] }}
+                                                    {% else %}
+                                                        -
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                {% if result.description_sale %}
+                <div class="col-md-6">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0"><i class="fas fa-file-alt me-2"></i>Description commerciale</h5>
+                        </div>
+                        <div class="card-body">
+                            {{ result.description_sale|raw }}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Onglet Achats -->
+        {% if result.purchase_ok %}
+        <div class="tab-pane fade" id="purchase" role="tabpanel" aria-labelledby="purchase-tab">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0"><i class="fas fa-shopping-cart me-2"></i>Informations d'achat</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="fw-bold text-muted small mb-1">Politique de contrôle</label>
+                                    <div>
+                                        {% if result.purchase_method == 'purchase' %}
+                                            Sur base des quantités commandées
+                                        {% elseif result.purchase_method == 'receive' %}
+                                            Sur base des quantités reçues
+                                        {% else %}
+                                            {{ result.purchase_method }}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                {% if result.uom_po_id %}
+                                <div class="col-md-6">
+                                    <label class="fw-bold text-muted small mb-1">Unité d'achat</label>
+                                    <div>
+                                        {% if result.uom_po_id is iterable and result.uom_po_id[1] is defined %}
+                                            {{ result.uom_po_id[1] }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="fw-bold text-muted small mb-1">Coût</label>
+                                    <div class="fw-bold">
+                                        {% if result.standard_price is defined %}
+                                            {{ result.standard_price }}
+                                            {% if result.cost_currency_id is defined %}
+                                                {% if result.cost_currency_id is iterable and result.cost_currency_id[1] is defined %}
+                                                    {{ result.cost_currency_id[1] }}
+                                                {% else %}
+                                                    €
+                                                {% endif %}
+                                            {% else %}
+                                                €
+                                            {% endif %}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="fw-bold text-muted small mb-1">Délai fournisseur moyen</label>
+                                    <div>{{ result.sale_delay ?? 0 }} jours</div>
+                                </div>
+                            </div>
+                            
+                            {% if result.description_purchase %}
+                            <div class="mt-4">
+                                <h6 class="fw-bold">Description d'achat</h6>
+                                <div class="p-2 bg-light rounded">
+                                    {{ result.description_purchase|raw }}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0"><i class="fas fa-truck me-2"></i>Fournisseurs</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if additional is defined and additional.suppliers is defined and additional.suppliers|length > 0 %}
+                            <div class="table-responsive">
+                                <table class="table table-sm table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Fournisseur</th>
+                                            <th>Nom produit</th>
+                                            <th>Prix</th>
+                                            <th>Devise</th>
+                                            <th>Qté min</th>
+                                            <th>Délai (jours)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for supplier in additional.suppliers %}
+                                        <tr>
+                                            <td>
+                                                {% if supplier.name is iterable and supplier.name[1] is defined %}
+                                                    {{ supplier.name[1] }}
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ supplier.product_name|default('-') }}</td>
+                                            <td>{{ supplier.price|default('-') }}</td>
+                                            <td>
+                                                {% if supplier.currency_id is iterable and supplier.currency_id[1] is defined %}
+                                                    {{ supplier.currency_id[1] }}
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ supplier.min_qty|default('-') }}</td>
+                                            <td>{{ supplier.delay|default('-') }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-3 text-muted">
+                                <i class="fas fa-info-circle me-1"></i> Aucun fournisseur défini pour ce produit
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Onglet Technique -->
+        {% if result.final_inspection is defined or result.hs_code is defined or result.country_of_origin is defined or result.taric_code is defined %}
+        <div class="tab-pane fade" id="technical" role="tabpanel" aria-labelledby="technical-tab">
+            {% if result.hs_code is defined or result.country_of_origin is defined or result.taric_code is defined %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0"><i class="fas fa-globe me-2"></i>Informations douanières</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% if result.hs_code is defined %}
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="fw-bold text-muted small mb-1">Code HS</label>
+                                        <div>{{ result.hs_code }}</div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if result.country_of_origin is defined %}
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="fw-bold text-muted small mb-1">Pays d'origine</label>
+                                        <div>
+                                            {% if result.country_of_origin is iterable and result.country_of_origin[1] is defined %}
+                                                {{ result.country_of_origin[1] }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if result.taric_code is defined %}
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="fw-bold text-muted small mb-1">Code TARIC</label>
+                                        <div>{{ result.taric_code }}</div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if result.final_inspection is defined %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0"><i class="fas fa-check-square me-2"></i>Inspections spécifiques</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="fw-bold text-muted small mb-1">Inspection finale</label>
+                                    <div>{{ result.final_inspection ? 'Oui' : 'Non' }}</div>
+                                </div>
+                                
+                                {% if result.ref_report_code_id is defined %}
+                                <div class="col-md-6">
+                                    <label class="fw-bold text-muted small mb-1">Code de test rapport de référence</label>
+                                    <div>
+                                        {% if result.ref_report_code_id is iterable and result.ref_report_code_id[1] is defined %}
+                                            {{ result.ref_report_code_id[1] }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Inspections dimensionnelles si disponibles -->
+                            {% if additional is defined and additional.dim_inspections is defined and additional.dim_inspections|length > 0 %}
+                            <div class="mt-4">
+                                <h6 class="fw-bold">Inspections dimensionnelles</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Dimension</th>
+                                                <th>Valeur nominale</th>
+                                                <th>Limite sup.</th>
+                                                <th>Limite inf.</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for inspection in additional.dim_inspections %}
+                                            <tr>
+                                                <td>{{ inspection.name }}</td>
+                                                <td>{{ inspection.nominal }}</td>
+                                                <td>{{ inspection.upper_limit }}</td>
+                                                <td>{{ inspection.lower_limit }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Inspections visuelles si disponibles -->
+                            {% if additional is defined and additional.visual_inspections is defined and additional.visual_inspections|length > 0 %}
+                            <div class="mt-4">
+                                <h6 class="fw-bold">Inspections visuelles</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Inspection</th>
+                                                <th>Valeur</th>
+                                                <th>Description</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for inspection in additional.visual_inspections %}
+                                            <tr>
+                                                <td>{{ inspection.name }}</td>
+                                                <td>{{ inspection.value }}</td>
+                                                <td>{{ inspection.description }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Onglet Variantes -->
+        {% if result.product_variant_ids and result.product_variant_ids|length > 1 %}
+        <div class="tab-pane fade" id="variants" role="tabpanel" aria-labelledby="variants-tab">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0"><i class="fas fa-cubes me-2"></i>Variantes du produit ({{ result.product_variant_ids|length }})</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Nom</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for variant_id in result.product_variant_ids %}
+                                        <tr>
+                                            <td>{{ variant_id }}</td>
+                                            <td>Variante #{{ loop.index }}</td>
+                                            <td>
+                                                <a href="#" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-eye"></i> Voir
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

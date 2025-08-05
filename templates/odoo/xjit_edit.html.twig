@@ -1,0 +1,257 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Edit JIT Record{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="fw-bold text-primary">
+            <i class="fas fa-edit me-2"></i>
+            Modifier le JIT #{{ result.id|default('') }}
+        </h1>
+        <a href="{{ path('odoo_jit') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Retour
+        </a>
+    </div>
+
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="alert alert-{{ label }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endfor %}
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-white">
+            <h5 class="card-title mb-0">Modifier les informations</h5>
+        </div>
+        <div class="card-body">
+            <form action="{{ path('odoo_jit_update', { id: result.id }) }}" method="post" id="jit-edit-form">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="display_name" class="form-label">Nom:</label>
+                            <input type="text" id="display_name" name="display_name" class="form-control" value="{{ result.display_name|default('') }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="zone_1" class="form-label">Zone 1:</label>
+                            <input type="text" id="zone_1" name="zone_1" class="form-control" value="{{ result.zone_1|default('') }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="zone_2" class="form-label">Zone 2:</label>
+                            <input type="text" id="zone_2" name="zone_2" class="form-control" value="{{ result.zone_2|default('') }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="price" class="form-label">Prix:</label>
+                            <input type="number" step="0.01" id="price" name="price" class="form-control" value="{{ result.price|default('') }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="num_storage_days" class="form-label">Nombre de jours de stockage:</label>
+                            <input type="number" id="num_storage_days" name="num_storage_days" class="form-control" value="{{ result.num_storage_days|default('') }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="restock_quantity" class="form-label">Quantité à livrer:</label>
+                            <input type="number" id="restock_quantity" name="restock_quantity" class="form-control" value="{{ result.restock_quantity|default('') }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="order_point" class="form-label">Point de commande:</label>
+                            <input type="number" id="order_point" name="order_point" class="form-control" value="{{ result.order_point|default('') }}" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row g-3 mt-2">
+                    <!-- Client -->
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="partner_id" class="form-label">Client</label>
+                            <div class="input-group">
+                                <input type="text" id="partner_search" class="form-control" placeholder="Rechercher un client...">
+                                <button class="btn btn-outline-secondary" type="button" id="search-client-btn">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                                <input type="hidden" id="partner_id" name="partner_id" 
+                                       value="{{ result.partner_id[0]|default('') }}">
+                            </div>
+                            <small id="selected-partner-name" class="form-text">
+                                {% if result.partner_id is defined and result.partner_id is not empty %}
+                                    Client sélectionné: {{ result.partner_id[1] }}
+                                {% else %}
+                                    Aucun client sélectionné
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Référence -->
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="reference_id" class="form-label">Référence</label>
+                            <div class="input-group">
+                                <input type="text" id="inventory_search" class="form-control" placeholder="Rechercher un produit...">
+                                <button class="btn btn-outline-secondary" type="button" id="search-inventory-btn">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                                <input type="hidden" id="reference_id" name="reference_id" 
+                                       value="{{ result.reference_id[0]|default('') }}">
+                            </div>
+                            <small id="selected-inventory-name" class="form-text">
+                                {% if result.reference_id is defined and result.reference_id is not empty %}
+                                    Produit sélectionné: {{ result.reference_id[1] }}
+                                {% else %}
+                                    Aucun produit sélectionné
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Devise -->
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="currency_id" class="form-label">Devise</label>
+                            <select id="currency_id" name="currency_id" class="form-select" required>
+                                <option value="">Sélectionnez une devise</option>
+                                {% for cur in currencyList %}
+                                    <option value="{{ cur.id }}" 
+                                            {% if result.currency_id is defined and result.currency_id is not empty and cur.id == result.currency_id[0] %} 
+                                                selected 
+                                            {% endif %}>
+                                        {{ cur.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Mettre à jour
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour la recherche de client -->
+<div class="modal fade" id="clientSearchModal" tabindex="-1" aria-labelledby="clientSearchModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="clientSearchModalLabel">Résultats de recherche</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="client-results"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour la recherche de produit -->
+<div class="modal fade" id="inventorySearchModal" tabindex="-1" aria-labelledby="inventorySearchModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="inventorySearchModalLabel">Résultats de recherche</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="inventory-results"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Logique de recherche client
+            document.getElementById('search-client-btn').addEventListener('click', function() {
+                const searchTerm = document.getElementById('partner_search').value;
+                if (searchTerm.length < 2) {
+                    alert("Veuillez saisir au moins 2 caractères");
+                    return;
+                }
+                
+                // Recherche AJAX
+                fetch(`/api/search/client?term=${encodeURIComponent(searchTerm)}`)
+                    .then(response => response.json())
+                    .then(clients => {
+                        // Afficher les résultats dans une modal
+                        let html = '<div class="list-group">';
+                        clients.forEach(client => {
+                            html += `<a href="#" class="list-group-item list-group-item-action client-result" 
+                                       data-id="${client.id}" data-name="${client.name}">${client.name}</a>`;
+                        });
+                        html += '</div>';
+                        
+                        document.getElementById('client-results').innerHTML = html;
+                        new bootstrap.Modal(document.getElementById('clientSearchModal')).show();
+                    });
+            });
+            
+            // Sélection d'un client depuis les résultats
+            document.getElementById('client-results').addEventListener('click', function(e) {
+                if (e.target.classList.contains('client-result')) {
+                    e.preventDefault();
+                    const id = e.target.dataset.id;
+                    const name = e.target.dataset.name;
+                    document.getElementById('partner_id').value = id;
+                    document.getElementById('selected-partner-name').textContent = `Client sélectionné: ${name}`;
+                    bootstrap.Modal.getInstance(document.getElementById('clientSearchModal')).hide();
+                }
+            });
+            
+            // Recherche de produit
+            document.getElementById('search-inventory-btn')?.addEventListener('click', function() {
+                const searchTerm = document.getElementById('inventory_search').value;
+                if (searchTerm.length < 2) {
+                    alert("Veuillez saisir au moins 2 caractères");
+                    return;
+                }
+                
+                // Recherche AJAX
+                fetch(`/api/search/product?term=${encodeURIComponent(searchTerm)}`)
+                    .then(response => response.json())
+                    .then(products => {
+                        // Afficher les résultats dans une modal
+                        let html = '<div class="list-group">';
+                        products.forEach(product => {
+                            html += `<a href="#" class="list-group-item list-group-item-action product-result" 
+                                      data-id="${product.id}" data-name="${product.display_name}">${product.display_name}</a>`;
+                        });
+                        html += '</div>';
+                        
+                        document.getElementById('inventory-results').innerHTML = html;
+                        new bootstrap.Modal(document.getElementById('inventorySearchModal')).show();
+                    });
+            });
+            
+            // Sélection d'un produit depuis les résultats
+            document.getElementById('inventory-results')?.addEventListener('click', function(e) {
+                if (e.target.classList.contains('product-result')) {
+                    e.preventDefault();
+                    const id = e.target.dataset.id;
+                    const name = e.target.dataset.name;
+                    document.getElementById('reference_id').value = id;
+                    document.getElementById('selected-inventory-name').textContent = `Produit sélectionné: ${name}`;
+                    bootstrap.Modal.getInstance(document.getElementById('inventorySearchModal')).hide();
+                }
+            });
+        });
+    </script>
+{% endblock %}

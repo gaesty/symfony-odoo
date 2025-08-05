@@ -1,0 +1,129 @@
+{# filepath: c:\wamp\www\Odoo\symfony-odoo\templates\odoo\update_partner.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier un partenaire{% endblock %}
+
+{% block body %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-6 fw-bold text-primary">
+                <i class="fas fa-user-edit me-2"></i>Modifier un partenaire
+            </h1>
+        </div>
+        <div class="col-auto">
+            <a href="{{ path('odoo_partners') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Retour à la liste
+            </a>
+        </div>
+    </div>
+
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="alert alert-{{ label }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endfor %}
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form method="post" action="{{ path('odoo_partner_update', {'id': partner.id}) }}">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Nom *</label>
+                            <input type="text" class="form-control" id="name" name="name" value="{{ partner.name }}" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" value="{{ partner.email }}">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">Téléphone</label>
+                            <input type="tel" class="form-control" id="phone" name="phone" value="{{ partner.phone }}">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="mobile" class="form-label">Mobile</label>
+                            <input type="tel" class="form-control" id="mobile" name="mobile" value="{{ partner.mobile }}">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="mb-3">
+                            <label for="street" class="form-label">Adresse</label>
+                            <input type="text" class="form-control" id="street" name="street" value="{{ partner.street }}">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="city" class="form-label">Ville</label>
+                            <input type="text" class="form-control" id="city" name="city" value="{{ partner.city }}">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="zip" class="form-label">Code postal</label>
+                            <input type="text" class="form-control" id="zip" name="zip" value="{{ partner.zip }}">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="country_id" class="form-label">Pays</label>
+                            <select class="form-select" id="country_id" name="country_id">
+                                <option value="">Sélectionner un pays</option>
+                                {% for country in countryList %}
+                                    <option value="{{ country.id }}" {% if partner.country_id and partner.country_id[0] == country.id %}selected{% endif %}>
+                                        {{ country.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="website" class="form-label">Site web</label>
+                            <input type="url" class="form-control" id="website" name="website" value="{{ partner.website }}">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="vat" class="form-label">Numéro TVA</label>
+                            <input type="text" class="form-control" id="vat" name="vat" value="{{ partner.vat }}">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="comment" class="form-label">Commentaires</label>
+                    <textarea class="form-control" id="comment" name="comment" rows="3">{{ partner.comment }}</textarea>
+                </div>
+                
+                <div class="text-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Enregistrer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

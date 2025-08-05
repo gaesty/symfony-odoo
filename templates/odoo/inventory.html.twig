@@ -1,0 +1,449 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Inventaire{% endblock %}
+
+{% block body %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="display-6 fw-bold text-primary">
+                <i class="fas fa-boxes me-2"></i>Inventaire
+            </h1>
+            <p class="text-muted">Gestion des produits et stocks</p>
+        </div>
+        <div class="col-md-4 text-end d-flex align-items-center justify-content-md-end">
+            <form action="{{ path('odoo_inventory') }}" method="GET" class="d-flex me-2" style="max-width: 300px">
+                <input type="text" name="search" id="inventory-search" class="form-control" placeholder="Rechercher..." value="{{ searchTerm }}">
+                <button type="submit" class="btn btn-outline-secondary">
+                    <i class="fas fa-search"></i>
+                </button>
+            </form>
+            <a href="{{ path('odoo_inventory_create') }}" class="btn btn-primary">
+                <i class="fas fa-plus-circle me-1"></i>Nouveau produit
+            </a>
+        </div>
+    </div>
+
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="alert alert-{{ label }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endfor %}
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+            <h5 class="mb-0">Liste des produits</h5>
+            <div class="btn-group btn-group-sm">
+                <a href="{{ path('odoo_inventory') }}" class="btn btn-outline-secondary" id="refresh-btn" title="Rafraîchir">
+                    <i class="fas fa-sync-alt"></i>
+                </a>
+                <button type="button" class="btn btn-outline-secondary" title="Exporter CSV">
+                    <i class="fas fa-file-csv"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary" title="Options d'affichage">
+                    <i class="fas fa-columns"></i>
+                </button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped align-middle mb-0" id="inventory-table">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="fw-semibold py-3">ID</th>
+                            <th class="fw-semibold py-3">Produit</th>
+                            <th class="fw-semibold py-3">Catégorie</th>
+                            <th class="fw-semibold py-3">Prix</th>
+                            <th class="fw-semibold py-3">Stock</th>
+                            <th class="fw-semibold py-3">Statut</th>
+                            <th class="fw-semibold py-3 text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in result %}
+                            <tr>
+                                <td>
+                                    <span class="fw-bold text-secondary">{{ record.id }}</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-light rounded p-2 me-2">
+                                            <i class="fas fa-box text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <span class="d-block fw-medium">{{ record.name }}</span>
+                                            <small class="text-muted">Réf: {{ record.default_code|default('N/A') }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if record.categ_id is defined and record.categ_id %}
+                                        {{ record.categ_id[1]|default('Non catégorisé') }}
+                                    {% else %}
+                                        Non catégorisé
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if record.list_price is defined %}
+                                        {{ record.list_price|number_format(2, ',', ' ') }} 
+                                        {% if record.currency_id is defined and record.currency_id %}
+                                            {{ record.currency_id[1] }}
+                                        {% else %}
+                                            €
+                                        {% endif %}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% set stock = record.qty_available|default(0) %}
+                                    {% if stock > 10 %}
+                                        <span class="badge bg-success">{{ stock }} en stock</span>
+                                    {% elseif stock > 0 %}
+                                        <span class="badge bg-warning text-dark">{{ stock }} en stock</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Rupture</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if record.active|default(false) %}
+                                        <span class="badge bg-success rounded-pill">Actif</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary rounded-pill">Inactif</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <a href="{{ path('odoo_inventory_info', {'id': record.id}) }}" class="btn btn-sm btn-outline-primary me-1">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ path('odoo_inventory_update', {'id': record.id}) }}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-pencil-alt"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center py-4">
+                                    <div class="py-5">
+                                        <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                                        <p class="mb-0">Aucun produit trouvé dans l'inventaire</p>
+                                        <a href="{{ path('odoo_inventory_create') }}" class="btn btn-primary mt-3">
+                                            <i class="fas fa-plus-circle me-1"></i>Ajouter un produit
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Pagination -->
+        <div class="card-footer bg-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="text-muted small">
+                    Affichage de <span class="fw-medium">{{ result|length }}</span> produits sur {{ totalCount|default('?') }}
+                </div>
+                
+                {% if totalPages > 1 %}
+                <nav aria-label="Page navigation">
+                    <ul class="pagination pagination-sm mb-0">
+                        <!-- Bouton précédent -->
+                        {% if currentPage > 1 %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ path('odoo_inventory', {'page': currentPage - 1, 'search': searchTerm}) }}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="fas fa-chevron-left"></i></span>
+                            </li>
+                        {% endif %}
+                        
+                        <!-- Pages numérotées - afficher max 5 pages autour de la page actuelle -->
+                        {% set startPage = max(1, currentPage - 2) %}
+                        {% set endPage = min(totalPages, currentPage + 2) %}
+                        
+                        {% if startPage > 1 %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ path('odoo_inventory', {'page': 1, 'search': searchTerm}) }}">1</a>
+                            </li>
+                            {% if startPage > 2 %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endif %}
+                        
+                        {% for i in startPage..endPage %}
+                            <li class="page-item {{ currentPage == i ? 'active' : '' }}">
+                                <a class="page-link" href="{{ path('odoo_inventory', {'page': i, 'search': searchTerm}) }}">{{ i }}</a>
+                            </li>
+                        {% endfor %}
+                        
+                        {% if endPage < totalPages %}
+                            {% if endPage < totalPages - 1 %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ path('odoo_inventory', {'page': totalPages, 'search': searchTerm}) }}">{{ totalPages }}</a>
+                            </li>
+                        {% endif %}
+                        
+                        <!-- Bouton suivant -->
+                        {% if currentPage < totalPages %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ path('odoo_inventory', {'page': currentPage + 1, 'search': searchTerm}) }}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="fas fa-chevron-right"></i></span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Variables globales
+        const inventoryTable = document.querySelector('#inventory-table tbody');
+        const paginationContainer = document.querySelector('.pagination');
+        const searchInput = document.getElementById('inventory-search');
+        const refreshBtn = document.getElementById('refresh-btn');
+        const infoContainer = document.querySelector('.text-muted.small');
+        let currentPage = {{ currentPage }};
+        let searchTerm = '{{ searchTerm }}';
+        
+        // Charger les données via AJAX
+        function loadInventoryData(page = 1, search = '') {
+            // Afficher un indicateur de chargement
+            inventoryTable.innerHTML = '<tr><td colspan="7" class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Chargement...</span></div></td></tr>';
+            
+            // Préparer l'URL avec les paramètres
+            const url = new URL('{{ path('api_odoo_inventory') }}', window.location.origin);
+            url.searchParams.append('page', page);
+            url.searchParams.append('limit', 20);
+            if (search) {
+                url.searchParams.append('search', search);
+            }
+            
+            // Faire la requête AJAX
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Mettre à jour le tableau
+                        updateInventoryTable(data.data);
+                        // Mettre à jour la pagination
+                        updatePagination(page, data.totalPages, search);
+                        // Mettre à jour les informations de comptage
+                        infoContainer.innerHTML = `Affichage de <span class="fw-medium">${data.data.length}</span> produits sur ${data.totalCount}`;
+                        // Mettre à jour l'URL du navigateur sans recharger la page
+                        const stateUrl = new URL(window.location.href);
+                        stateUrl.searchParams.set('page', page);
+                        if (search) {
+                            stateUrl.searchParams.set('search', search);
+                        } else {
+                            stateUrl.searchParams.delete('search');
+                        }
+                        history.pushState({page: page, search: search}, '', stateUrl);
+                        
+                        // Mettre à jour les variables globales
+                        currentPage = page;
+                        searchTerm = search;
+                    } else {
+                        showError('Une erreur est survenue lors du chargement des données.');
+                    }
+                })
+                .catch(error => {
+                    showError('Erreur de connexion: ' + error);
+                });
+        }
+        
+        // Mettre à jour le tableau avec les données
+        function updateInventoryTable(products) {
+            if (products.length === 0) {
+                inventoryTable.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center py-4">
+                            <div class="alert alert-info mb-0">
+                                <i class="fas fa-info-circle me-2"></i>Aucun produit trouvé dans l'inventaire
+                            </div>
+                        </td>
+                    </tr>`;
+                return;
+            }
+            
+            let html = '';
+            products.forEach(product => {
+                html += `
+                    <tr>
+                        <td>${product.id}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div>
+                                    <div class="fw-medium">${product.display_name || product.name}</div>
+                                    ${product.default_code ? `<div class="text-muted small">${product.default_code}</div>` : ''}
+                                </div>
+                            </div>
+                        </td>
+                        <td>${product.categ_id ? product.categ_id[1] : '-'}</td>
+                        <td>${product.list_price !== undefined ? product.list_price : '-'} €</td>
+                        <td>${product.qty_available !== undefined ? product.qty_available : '-'}</td>
+                        <td>
+                            <span class="badge ${product.active ? 'bg-success' : 'bg-secondary'}">
+                                ${product.active ? 'Actif' : 'Inactif'}
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm">
+                                <a href="/odoo_inventory/info/${product.id}" class="btn btn-outline-secondary" title="Voir détails">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="#" class="btn btn-outline-primary" title="Modifier">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>`;
+            });
+            
+            inventoryTable.innerHTML = html;
+        }
+        
+        // Mettre à jour la pagination
+        function updatePagination(currentPage, totalPages, search) {
+            if (totalPages <= 1) {
+                paginationContainer.style.display = 'none';
+                return;
+            }
+            
+            paginationContainer.style.display = 'flex';
+            
+            let html = '';
+            
+            // Bouton précédent
+            html += `
+                <li class="page-item ${currentPage <= 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" data-page="${currentPage - 1}">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>`;
+            
+            // Pages numérotées
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+            
+            if (startPage > 1) {
+                html += `
+                    <li class="page-item">
+                        <a class="page-link" href="#" data-page="1">1</a>
+                    </li>`;
+                    
+                if (startPage > 2) {
+                    html += `
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>`;
+                }
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                html += `
+                    <li class="page-item ${i === currentPage ? 'active' : ''}">
+                        <a class="page-link" href="#" data-page="${i}">${i}</a>
+                    </li>`;
+            }
+            
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    html += `
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>`;
+                }
+                
+                html += `
+                    <li class="page-item">
+                        <a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a>
+                    </li>`;
+            }
+            
+            // Bouton suivant
+            html += `
+                <li class="page-item ${currentPage >= totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="#" data-page="${currentPage + 1}">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>`;
+            
+            paginationContainer.innerHTML = html;
+            
+            // Ajouter des écouteurs d'événements aux boutons de pagination
+            document.querySelectorAll('.page-link[data-page]').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const page = parseInt(this.getAttribute('data-page'));
+                    loadInventoryData(page, searchTerm);
+                });
+            });
+        }
+        
+        // Afficher une erreur
+        function showError(message) {
+            inventoryTable.innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center py-4">
+                        <div class="alert alert-danger mb-0">
+                            <i class="fas fa-exclamation-triangle me-2"></i>${message}
+                        </div>
+                    </td>
+                </tr>`;
+        }
+        
+        // Écouteur d'événements pour la recherche
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const search = this.value.trim();
+                loadInventoryData(1, search);
+            }
+        });
+        
+        // Écouteur pour le bouton de rafraîchissement
+        refreshBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            loadInventoryData(currentPage, searchTerm);
+        });
+        
+        // Navigation dans l'historique du navigateur
+        window.addEventListener('popstate', function(e) {
+            if (e.state) {
+                loadInventoryData(e.state.page, e.state.search);
+            } else {
+                loadInventoryData(1, '');
+            }
+        });
+        
+        // Initialiser avec les données actuelles
+        loadInventoryData({{ currentPage }}, '{{ searchTerm }}');
+    });
+</script>
+{% endblock %}

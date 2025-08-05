@@ -1,0 +1,206 @@
+{# templates/odoo/xjit_info.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Info JIT #{{ result[0].id|join(' ') }}{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="fw-bold text-primary">
+            <i class="fas fa-boxes me-2"></i>
+            Détails du JIT #{{ result[0].id|join(' ') }}
+        </h1>
+        <div class="btn-group">
+            <a href="{{ path('odoo_jit') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Retour
+            </a>
+            <a href="{{ path('odoo_jit_update', {'id': result[0].id}) }}" class="btn btn-warning">
+                <i class="fas fa-edit"></i> Modifier
+            </a>
+        </div>
+    </div>
+
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="alert alert-{{ label }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endfor %}
+
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">Informations générales</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="card h-100 bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2 text-muted">Détails du JIT</h6>
+                                    <dl class="row mb-0">
+                                        <dt class="col-sm-4">Nom</dt>
+                                        <dd class="col-sm-8">{{ result[0].display_name|join(' ')|default('N/A') }}</dd>
+                                        
+                                        <dt class="col-sm-4">Date de création</dt>
+                                        <dd class="col-sm-8">{{ result[0].create_date|join(' ')|default('N/A') }}</dd>
+                                        
+                                        <dt class="col-sm-4">Zone 1</dt>
+                                        <dd class="col-sm-8">{{ result[0].zone_1|join(' ')|default('N/A') }}</dd>
+                                        
+                                        <dt class="col-sm-4">Zone 2</dt>
+                                        <dd class="col-sm-8">{{ result[0].zone_2|join(' ')|default('N/A') }}</dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100 bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2 text-muted">Client et référence</h6>
+                                    <dl class="row mb-0">
+                                        <dt class="col-sm-4">Client</dt>
+                                        <dd class="col-sm-8">
+                                            {% if result[0].partner_id is defined and result[0].partner_id is not empty %}
+                                                <span class="fw-bold">{{ result[0].partner_id[1] }}</span>
+                                            {% else %}
+                                                <span class="text-muted">N/A</span>
+                                            {% endif %}
+                                        </dd>
+                                        
+                                        <dt class="col-sm-4">Référence</dt>
+                                        <dd class="col-sm-8">
+                                            {% if result[0].reference_id is defined and result[0].reference_id is not empty %}
+                                                {{ result[0].reference_id[1] }}
+                                            {% else %}
+                                                <span class="text-muted">N/A</span>
+                                            {% endif %}
+                                        </dd>
+                                        
+                                        <dt class="col-sm-4">Devise</dt>
+                                        <dd class="col-sm-8">
+                                            {% if result[0].currency_id is defined and result[0].currency_id is not empty %}
+                                                {{ result[0].currency_id[1] }}
+                                            {% else %}
+                                                <span class="text-muted">N/A</span>
+                                            {% endif %}
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-3">
+                        <div class="col-md-6">
+                            <div class="card h-100 bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2 text-muted">Informations de stock</h6>
+                                    <dl class="row mb-0">
+                                        <dt class="col-sm-4">Prix</dt>
+                                        <dd class="col-sm-8">
+                                            <span class="fw-bold">{{ result[0].price|join(' ')|default('N/A') }}</span>
+                                            {% if result[0].currency_id is defined and result[0].currency_id is not empty %}
+                                                {{ result[0].currency_id[1] }}
+                                            {% endif %}
+                                        </dd>
+                                        
+                                        <dt class="col-sm-4">Jours de stockage</dt>
+                                        <dd class="col-sm-8">
+                                            {{ result[0].num_storage_days|join(' ')|default('N/A') }}
+                                            <small class="text-muted">jours</small>
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100 bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2 text-muted">Quantités</h6>
+                                    <dl class="row mb-0">
+                                        <dt class="col-sm-4">Quantité à livrer</dt>
+                                        <dd class="col-sm-8">
+                                            <span class="badge bg-info">{{ result[0].restock_quantity|join(' ')|default('N/A') }}</span>
+                                        </dd>
+                                        
+                                        <dt class="col-sm-4">Point de commande</dt>
+                                        <dd class="col-sm-8">
+                                            <span class="badge bg-warning">{{ result[0].order_point|join(' ')|default('N/A') }}</span>
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Si vous avez des détails supplémentaires ou des relations à afficher, vous pouvez les ajouter ici -->
+            
+            <!-- Carte pour des données techniques ou avancées si nécessaire -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Détails techniques</h5>
+                        <span class="badge bg-secondary">JIT</span>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0" id="jitInfoTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="fw-semibold">ID</th>
+                                    <th class="fw-semibold">Nom</th>
+                                    <th class="fw-semibold">Zone 1</th>
+                                    <th class="fw-semibold">Zone 2</th>
+                                    <th class="fw-semibold">Prix</th>
+                                    <th class="fw-semibold">Jours de stockage</th>
+                                    <th class="fw-semibold">Quantités</th>
+                                    <th class="fw-semibold">Point de commande</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>{{ result[0].id|join(' ') }}</td>
+                                    <td>{{ result[0].display_name|join(' ') }}</td>
+                                    <td>{{ result[0].zone_1|join(' ') }}</td>
+                                    <td>{{ result[0].zone_2|join(' ') }}</td>
+                                    <td>{{ result[0].price|join(' ') }}</td>
+                                    <td>{{ result[0].num_storage_days|join(' ') }}</td>
+                                    <td>{{ result[0].restock_quantity|join(' ') }}</td>
+                                    <td>{{ result[0].order_point|join(' ') }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!$.fn.dataTable.isDataTable('#jitInfoTable')) {
+                $('#jitInfoTable').DataTable({
+                    language: {
+                        url: '//cdn.datatables.net/plug-ins/1.13.1/i18n/fr-FR.json'
+                    },
+                    paging: false,
+                    searching: false,
+                    info: false,
+                    responsive: true,
+                    scrollX: true
+                });
+            }
+        });
+    </script>
+{% endblock %}

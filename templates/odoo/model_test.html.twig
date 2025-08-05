@@ -1,0 +1,48 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Test des modèles Odoo{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+    <h1>Test des modèles Odoo</h1>
+    
+    {% for modelName, result in results %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h2>{{ modelName }}</h2>
+                <span class="badge bg-{{ result.status == 'success' ? 'success' : 'danger' }}">
+                    {{ result.status }}
+                </span>
+            </div>
+            <div class="card-body">
+                {% if result.status == 'success' %}
+                    <h3>Champs disponibles</h3>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Nom du champ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for field in result.fields %}
+                                    <tr>
+                                        <td>{{ field }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <h3>Exemple de données</h3>
+                    <pre>{{ dump(result.sample) }}</pre>
+                {% else %}
+                    <div class="alert alert-danger">
+                        {{ result.message }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

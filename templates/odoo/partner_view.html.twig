@@ -1,7 +1,203 @@
 {% extends 'base.html.twig' %}
 
+{% block title %}{{ partner.name }} | Détails du partenaire{% endblock %}
+
 {% block body %}
-<h1>Partner name: {{ partner['name'] }}</h1>
-<h1>Partner email: {{ partner['email'] }}</h1>
-<h1>Partner phone: {{ partner['phone'] }}</h1>
+<div class="container py-4">
+    <!-- En-tête avec nom et actions -->
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-8">
+            <h1 class="display-6 fw-bold text-primary">
+                <i class="fas fa-user me-2"></i>{{ partner.name }}
+            </h1>
+            {% if partner.vat %}
+                <p class="text-muted mb-0">TVA: {{ partner.vat }}</p>
+            {% endif %}
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="btn-group">
+                <a href="{{ path('odoo_partners') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> Retour
+                </a>
+                <a href="{{ path('odoo_partner_update', {'id': partner.id}) }}" class="btn btn-warning">
+                    <i class="fas fa-edit me-1"></i> Modifier
+                </a>
+                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                    <i class="fas fa-trash me-1"></i> Supprimer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="alert alert-{{ label }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endfor %}
+
+    <div class="row">
+        <!-- Informations principales -->
+        <div class="col-md-8 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Informations principales</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="fw-bold text-muted small mb-1">Type</label>
+                                <div>
+                                    <span class="badge {% if partner.company_type == 'company' %}bg-primary{% else %}bg-info{% endif %}">
+                                        {{ partner.company_type == 'company' ? 'Entreprise' : 'Particulier' }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="fw-bold text-muted small mb-1">Identifiant</label>
+                                <div>#{{ partner.id }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="fw-bold text-muted small mb-1">Adresse</label>
+                        <address class="mb-0">
+                            {% if partner.street %}{{ partner.street }}<br>{% endif %}
+                            {% if partner.street2 %}{{ partner.street2 }}<br>{% endif %}
+                            {% if partner.zip or partner.city %}
+                                {% if partner.zip %}{{ partner.zip }}{% endif %}
+                                {% if partner.city %} {{ partner.city }}{% endif %}<br>
+                            {% endif %}
+                            {% if partner.state_id %}{{ partner.state_id[1] }}<br>{% endif %}
+                            {% if partner.country_id %}{{ partner.country_id[1] }}{% endif %}
+                        </address>
+                    </div>
+
+                    {% if partner.comment %}
+                    <div class="mb-0">
+                        <label class="fw-bold text-muted small mb-1">Notes</label>
+                        <p class="mb-0">{{ partner.comment|nl2br }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Coordonnées -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-address-card me-2"></i>Coordonnées</h5>
+                </div>
+                <div class="card-body">
+                    {% if partner.email %}
+                    <div class="mb-3">
+                        <label class="fw-bold text-muted small mb-1">Email</label>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-envelope text-muted me-2"></i>
+                            <a href="mailto:{{ partner.email }}">{{ partner.email }}</a>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if partner.phone %}
+                    <div class="mb-3">
+                        <label class="fw-bold text-muted small mb-1">Téléphone</label>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-phone text-muted me-2"></i>
+                            <a href="tel:{{ partner.phone }}">{{ partner.phone }}</a>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if partner.mobile %}
+                    <div class="mb-3">
+                        <label class="fw-bold text-muted small mb-1">Mobile</label>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-mobile-alt text-muted me-2"></i>
+                            <a href="tel:{{ partner.mobile }}">{{ partner.mobile }}</a>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if partner.website %}
+                    <div class="mb-3">
+                        <label class="fw-bold text-muted small mb-1">Site web</label>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-globe text-muted me-2"></i>
+                            <a href="{{ partner.website|replace({'http://': 'https://'}) }}" target="_blank" rel="noopener noreferrer">
+                                {{ partner.website }}
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section supplémentaire pour d'autres détails -->
+    {% if partner.parent_id or partner.child_ids or partner.category_id %}
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="fas fa-sitemap me-2"></i>Relations</h5>
+                </div>
+                <div class="card-body">
+                    {% if partner.parent_id %}
+                    <div class="mb-3">
+                        <label class="fw-bold text-muted small mb-1">Société parente</label>
+                        <div>
+                            <a href="{{ path('odoo_partner_view', {'id': partner.parent_id[0]}) }}">
+                                {{ partner.parent_id[1] }}
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if partner.category_id %}
+                    <div>
+                        <label class="fw-bold text-muted small mb-1">Catégories</label>
+                        <div>
+                            {% for category in partner.category_id[1] %}
+                                <span class="badge bg-secondary me-1">{{ category }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal de confirmation pour la suppression -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirmation de suppression</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Êtes-vous sûr de vouloir supprimer ce partenaire?</p>
+                <p class="fw-bold text-danger">Cette action est irréversible.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <form action="{{ path('odoo_partner_delete', {'id': partner.id}) }}" method="POST">
+                    <button type="submit" class="btn btn-danger">Supprimer</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

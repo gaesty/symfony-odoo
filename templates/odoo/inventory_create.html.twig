@@ -1,0 +1,249 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Création d'un produit{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="fw-bold text-primary">
+            <i class="fas fa-plus-circle me-2"></i> Nouveau produit
+        </h1>
+        <a href="{{ path('odoo_inventory') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Retour à l'inventaire
+        </a>
+    </div>
+
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="alert alert-{{ label }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endfor %}
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-white">
+            <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#general-info" type="button" role="tab">
+                        Informations générales
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#inventory-info" type="button" role="tab">
+                        Inventaire
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#sales-info" type="button" role="tab">
+                        Ventes
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#technical-info" type="button" role="tab">
+                        Technique
+                    </button>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ path('odoo_inventory_create') }}" class="needs-validation" novalidate>
+                <div class="tab-content">
+                    <!-- Onglet Informations générales -->
+                    <div class="tab-pane fade show active" id="general-info" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="display_name" class="form-label">Nom du produit <span class="text-danger">*</span></label>
+                                    <input type="text" id="display_name" name="display_name" class="form-control" required>
+                                    <div class="invalid-feedback">Veuillez saisir un nom pour le produit</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="default_code" class="form-label">Référence interne</label>
+                                    <input type="text" id="default_code" name="default_code" class="form-control">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="categ_id" class="form-label">Catégorie <span class="text-danger">*</span></label>
+                                    <select id="categ_id" name="categ_id" class="form-select" required>
+                                        <option value="">Sélectionnez une catégorie</option>
+                                        {% for category in productCategory %}
+                                            <option value="{{ category.id }}">{{ category.complete_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="invalid-feedback">Veuillez sélectionner une catégorie</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="type" class="form-label">Type de produit</label>
+                                    <select id="type" name="type" class="form-select">
+                                        <option value="product" selected>Article stockable</option>
+                                        <option value="consu">Consommable</option>
+                                        <option value="service">Service</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="description" class="form-label">Description interne</label>
+                                    <textarea id="description" name="description" class="form-control" rows="4"></textarea>
+                                </div>
+                                
+                                <div class="mb-3 d-flex gap-4 mt-4">
+                                    <div class="form-check form-switch">
+                                        <input type="checkbox" class="form-check-input" id="active" name="active" checked>
+                                        <label class="form-check-label" for="active">Actif</label>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input type="checkbox" class="form-check-input" id="sale_ok" name="sale_ok" checked>
+                                        <label class="form-check-label" for="sale_ok">Peut être vendu</label>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input type="checkbox" class="form-check-input" id="purchase_ok" name="purchase_ok" checked>
+                                        <label class="form-check-label" for="purchase_ok">Peut être acheté</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Onglet Inventaire -->
+                    <div class="tab-pane fade" id="inventory-info" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="qty_available" class="form-label">Quantité en stock</label>
+                                    <input type="number" id="qty_available" name="qty_available" class="form-control" value="0" min="0" step="1">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="uom_id" class="form-label">Unité de mesure</label>
+                                    <select id="uom_id" name="uom_id" class="form-select">
+                                        <option value="">-- Sélectionner --</option>
+                                        {% if uomList is defined %}
+                                            {% for uom in uomList %}
+                                                <option value="{{ uom.id }}">{{ uom.name }}</option>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="uom_po_id" class="form-label">Unité d'achat</label>
+                                    <select id="uom_po_id" name="uom_po_id" class="form-select">
+                                        <option value="">-- Sélectionner --</option>
+                                        {% for uom in uomList %}
+                                            <option value="{{ uom.id }}">{{ uom.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="weight" class="form-label">Poids</label>
+                                    <div class="input-group">
+                                        <input type="number" id="weight" name="weight" class="form-control" value="0" min="0" step="0.01">
+                                        <span class="input-group-text">kg</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="volume" class="form-label">Volume</label>
+                                    <div class="input-group">
+                                        <input type="number" id="volume" name="volume" class="form-control" value="0" min="0" step="0.01">
+                                        <span class="input-group-text">m³</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Onglet Ventes -->
+                    <div class="tab-pane fade" id="sales-info" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="list_price" class="form-label">Prix de vente</label>
+                                    <div class="input-group">
+                                        <input type="number" id="list_price" name="list_price" class="form-control" value="0" min="0" step="0.01">
+                                        <select id="currency_id" name="currency_id" class="form-select" style="max-width: 120px;">
+                                            {% for currency in currencyList %}
+                                                <option value="{{ currency.id }}">{{ currency.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="standard_price" class="form-label">Prix de revient</label>
+                                    <div class="input-group">
+                                        <input type="number" id="standard_price" name="standard_price" class="form-control" value="0" min="0" step="0.01">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="description_sale" class="form-label">Description commerciale</label>
+                                    <textarea id="description_sale" name="description_sale" class="form-control" rows="5"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Onglet Technique -->
+                    <div class="tab-pane fade" id="technical-info" role="tabpanel">
+                        <p class="text-muted">Informations techniques supplémentaires.</p>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-end mt-4 border-top pt-3">
+                    <a href="{{ path('odoo_inventory') }}" class="btn btn-outline-secondary me-2">Annuler</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Créer le produit
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Validation du formulaire
+            const form = document.querySelector('.needs-validation');
+            
+            form.addEventListener('submit', function(event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    
+                    // Trouver le premier onglet avec une erreur et l'activer
+                    const tabPanes = document.querySelectorAll('.tab-pane');
+                    for (const pane of tabPanes) {
+                        const invalidInputs = pane.querySelectorAll(':invalid');
+                        if (invalidInputs.length > 0) {
+                            const tabId = pane.id;
+                            const tab = document.querySelector(`[data-bs-target="#${tabId}"]`);
+                            bootstrap.Tab.getInstance(tab).show();
+                            break;
+                        }
+                    }
+                }
+                form.classList.add('was-validated');
+            });
+            
+            // Synchroniser les unités de mesure
+            const uomId = document.getElementById('uom_id');
+            const uomPoId = document.getElementById('uom_po_id');
+            
+            uomId.addEventListener('change', function() {
+                uomPoId.value = this.value;
+            });
+        });
+    </script>
+{% endblock %}

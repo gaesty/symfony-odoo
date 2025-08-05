@@ -1,0 +1,155 @@
+{# templates/odoo/xjit_order.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}JIT Orders{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="fw-bold text-primary">JIT Order Records</h1>
+        <a href="{{ path('odoo_jit_order_create') }}" class="btn btn-primary">
+            <i class="fas fa-plus-circle"></i> Nouvelle commande
+        </a>
+    </div>
+    
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="alert alert-{{ label }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endfor %}
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+            <h5 class="mb-0">Liste des commandes</h5>
+            <div class="btn-group btn-group-sm">
+                <button type="button" class="btn btn-outline-secondary">Exporter</button>
+                <button type="button" class="btn btn-outline-secondary">Filtrer</button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped align-middle mb-0" id="jit-order-table">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="fw-semibold py-3">ID</th>
+                            <th class="fw-semibold py-3">Référence</th>
+                            <th class="fw-semibold py-3">Client</th>
+                            <th class="fw-semibold py-3">Priorité</th>
+                            <th class="fw-semibold py-3 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in result %}
+                            <tr>
+                                <td>{{ record.id }}</td>
+                                <td>{{ record.name }}</td>
+                                <td>
+                                    {% if record.partner_id is defined and record.partner_id is not empty and record.partner_id[1] is defined %}
+                                        {{ record.partner_id[1] }}
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if record.priority is defined and record.priority == '2' %}
+                                        <span class="badge bg-danger"><i class="fas fa-star"></i> Prioritaire</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Standard</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex justify-content-center gap-2">
+                                        <a href="{{ path('odoo_jit_order_info', { 'id': record.id }) }}" 
+                                           class="btn btn-sm btn-info" title="Voir les détails">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ path('odoo_jit_order_update', { 'id': record.id }) }}" 
+                                           class="btn btn-sm btn-warning" title="Modifier">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-danger" 
+                                                onclick="confirmDelete('{{ record.id }}')"
+                                                title="Supprimer">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">
+                                    <i class="fas fa-inbox fa-2x mb-3 d-block"></i>
+                                    Aucune commande trouvée
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer bg-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="text-muted small">Total: {{ result|length }} commande(s)</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmation -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirmation de suppression</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Êtes-vous sûr de vouloir supprimer cette commande ? Cette action est irréversible.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <form id="deleteForm" action="" method="POST">
+                    <button type="submit" class="btn btn-danger">Confirmer la suppression</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Vérifier si la table n'est pas déjà initialisée
+            if (!$.fn.DataTable.isDataTable('#jit-order-table')) {
+                $('#jit-order-table').DataTable({
+                    language: {
+                        url: '//cdn.datatables.net/plug-ins/1.13.1/i18n/fr-FR.json'
+                    },
+                    pageLength: 25,
+                    dom: '<"top"flp>rt<"bottom"ip>',
+                    responsive: true,
+                    order: [[0, 'desc']],
+                    // Optimisations pour réduire l'utilisation mémoire
+                    deferRender: true,
+                    stateSave: false
+                });
+            }
+        });
+
+        // Fonction de confirmation de suppression
+        function confirmDelete(id) {
+            // Utiliser une URL de base avec un ID numérique valide (0) et le remplacer
+            var baseUrl = "{{ path('odoo_jit_order_delete', {'id': 0}) }}";
+            document.getElementById('deleteForm').action = baseUrl.replace('/0', '/' + id);
+            
+            // Afficher la modal
+            var myModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            myModal.show();
+        }
+    </script>
+{% endblock %}

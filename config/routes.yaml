@@ -1,5 +1,12 @@
+# routes.yaml
 controllers:
-    resource:
-        path: ../src/Controller/
-        namespace: App\Controller
-    type: attribute
+  resource: ../src/Controller/ #OdooController.php
+  type: attribute
+
+odoo_jit_controllers:
+  resource: ../src/Controller/OdooJIT/ #/JITController.php
+  type: attribute
+
+odoo_inventory_controllers:
+  resource: ../src/Controller/OdooInventory/ #InventoryController.php
+  type: attribute

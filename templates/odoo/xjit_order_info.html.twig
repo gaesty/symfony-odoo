@@ -1,0 +1,168 @@
+{# templates/odoo/xjit_order_info.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}JIT Order #{{ headInfo.id is defined ? headInfo.id : 'N/A' }}{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="fw-bold text-primary">
+            <i class="fas fa-clipboard-list me-2"></i>
+            Détails de la commande #{{ headInfo.id is defined ? headInfo.id : 'N/A' }}
+        </h1>
+        <div class="btn-group">
+            <a href="{{ path('odoo_jit_order') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Retour
+            </a>
+            <a href="{{ path('odoo_jit_order_update', {'id': headInfo.id}) }}" class="btn btn-warning">
+                <i class="fas fa-edit"></i> Modifier
+            </a>
+        </div>
+    </div>
+
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="alert alert-{{ label }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endfor %}
+
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">Informations générales</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="card h-100 bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2 text-muted">Détails de la commande</h6>
+                                    <dl class="row mb-0">
+                                        <dt class="col-sm-4">Référence</dt>
+                                        <dd class="col-sm-8">{{ headInfo.name|default('N/A') }}</dd>
+                                        
+                                        <dt class="col-sm-4">Date de création</dt>
+                                        <dd class="col-sm-8">{{ headInfo.create_date is defined ? headInfo.create_date : 'N/A' }}</dd>
+                                        
+                                        <dt class="col-sm-4">Priorité</dt>
+                                        <dd class="col-sm-8">
+                                            {% if headInfo.priority is defined and headInfo.priority == '2' %}
+                                                <span class="badge bg-danger"><i class="fas fa-star"></i> Prioritaire</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Standard</span>
+                                            {% endif %}
+                                        </dd>
+                                        
+                                        <dt class="col-sm-4">Date scan</dt>
+                                        <dd class="col-sm-8">{{ headInfo.scan_date is defined ? headInfo.scan_date : 'N/A' }}</dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100 bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2 text-muted">Informations client</h6>
+                                    <dl class="row mb-0">
+                                        <dt class="col-sm-4">Client</dt>
+                                        <dd class="col-sm-8">
+                                            {% if headInfo.partner_id is defined and headInfo.partner_id is not empty and headInfo.partner_id[1] is defined %}
+                                                <span class="fw-bold">{{ headInfo.partner_id[1] }}</span>
+                                            {% else %}
+                                                <span class="text-muted">N/A</span>
+                                            {% endif %}
+                                        </dd>
+                                        
+                                        <dt class="col-sm-4">Créateur</dt>
+                                        <dd class="col-sm-8">
+                                            {% if headInfo.create_uid is defined and headInfo.create_uid is not empty and headInfo.create_uid[1] is defined %}
+                                                {{ headInfo.create_uid[1] }}
+                                            {% else %}
+                                                <span class="text-muted">N/A</span>
+                                            {% endif %}
+                                        </dd>
+                                        
+                                        <dt class="col-sm-4">Instructions</dt>
+                                        <dd class="col-sm-8">
+                                            {% if headInfo.shipping_instruction is defined and headInfo.shipping_instruction %}
+                                                <p class="mb-0">{{ headInfo.shipping_instruction }}</p>
+                                            {% else %}
+                                                <span class="text-muted">Aucune instruction</span>
+                                            {% endif %}
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Lignes de commande</h5>
+                        <span class="badge bg-primary rounded-pill">{{ lineInfo|length }}</span>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    {% if lineInfo is not empty %}
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped mb-0" id="orderDetailsTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="fw-semibold">ID</th>
+                                        <th class="fw-semibold">Bin ID</th>
+                                        <th class="fw-semibold">Date</th>
+                                        <th class="fw-semibold text-end">Quantité</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for line in lineInfo %}
+                                        <tr>
+                                            <td>{{ line.id is defined ? (line.id is iterable ? line.id|join(' ') : line.id) : 'N/A' }}</td>
+                                            <td>{{ line.display_name is defined ? (line.display_name is iterable ? line.display_name|join(' ') : line.display_name) : line.name|default('N/A') }}</td>
+                                            <td>{{ line.create_date is defined ? (line.create_date is iterable ? line.create_date|join(' ') : line.create_date) : 'N/A' }}</td>
+                                            <td class="text-end fw-bold">{{ line.oder_quantity is defined ? (line.oder_quantity is iterable ? line.oder_quantity|join(' ') : line.oder_quantity) : '0' }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info m-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Aucune ligne de commande trouvée
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {% if lineInfo is not empty %}
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                if (!$.fn.dataTable.isDataTable('#orderDetailsTable')) {
+                    $('#orderDetailsTable').DataTable({
+                        language: {
+                            url: '//cdn.datatables.net/plug-ins/1.13.1/i18n/fr-FR.json'
+                        },
+                        paging: false,
+                        searching: false,
+                        info: false,
+                        responsive: true
+                    });
+                }
+            });
+        </script>
+    {% endif %}
+{% endblock %}

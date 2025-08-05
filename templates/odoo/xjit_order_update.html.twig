@@ -1,0 +1,311 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Modifier la commande JIT{% endblock %}
+
+{% block body %}
+<div class="container py-4">
+    <!-- En-tête avec titre et boutons d'action -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">
+            <i class="fas fa-edit me-2"></i>Modification de la commande JIT
+        </h1>
+        <a href="{{ path('odoo_jit_order_info', { id: headInfo.id }) }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Retour
+        </a>
+    </div>
+
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="alert alert-{{ label }} alert-dismissible fade show mb-4">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endfor %}
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form action="{{ path('odoo_jit_order_update', { id: headInfo.id }) }}" method="post">
+                <!-- Informations générales -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Informations générales</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label">Nom</label>
+                                <input type="text" id="name" name="name" class="form-control" 
+                                    value="{{ headInfo.display_name|join(' ') }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check form-switch mt-4">
+                                    <input type="checkbox" id="priority" name="priority" class="form-check-input" 
+                                        {% if headInfo.priority == '2' %} checked {% endif %}>
+                                    <label class="form-check-label" for="priority">Priorité élevée</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="partner_id" class="form-label">Client</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-user"></i></span>
+                                    {% if headInfo.partner_id is defined and headInfo.partner_id is not empty %}
+                                        <input type="text" class="form-control bg-light" readonly 
+                                            value="{{ headInfo.partner_id[1] }}">
+                                        <input type="hidden" name="partner_id" value="{{ headInfo.partner_id[0] }}">
+                                    {% else %}
+                                        <input type="text" class="form-control bg-light" readonly 
+                                            value="Aucun client sélectionné">
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="shipping_instruction" class="form-label">Instructions de livraison</label>
+                                <textarea id="shipping_instruction" name="shipping_instruction" class="form-control" 
+                                    rows="2" required>{{ headInfo.shipping_instruction|join(' ') }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Liste des Bin IDs -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-list me-2"></i>Éléments de la commande</h5>
+                        <button type="button" id="add-bin-id" class="btn btn-sm btn-primary">
+                            <i class="fas fa-plus me-1"></i> Ajouter un élément
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table id="bin-id-table" class="table table-striped table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Bin ID</th>
+                                        <th style="width:150px;">Quantité</th>
+                                        <th style="width:120px;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for line in lineInfo %}
+                                    <tr>
+                                        <td>
+                                            <p class="mb-0">
+                                                {% set binName = line.name %}
+                                                {% for clientBins in binIdsByClient %}
+                                                    {% for bin in clientBins.bins %}
+                                                        {% if bin.id == line.name %}
+                                                            {% set binName = bin.name %}
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                {% endfor %}
+                                                {{ binName }}
+                                            </p>
+                                            <input type="hidden" name="line_ids[]" value="{{ line.id }}">
+                                        </td>
+                                        <td>
+                                            <input type="number" name="existing_quantities[]" 
+                                                value="{{ line.oder_quantity }}" class="form-control form-control-sm" 
+                                                min="1" required>
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-danger remove-bin-id" 
+                                                    data-line-id="{{ line.id }}">
+                                                <i class="fas fa-trash me-1"></i> Supprimer
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white text-muted">
+                        <i class="fas fa-info-circle me-1"></i> Vous pouvez ajouter, modifier ou supprimer des éléments de la commande
+                    </div>
+                </div>
+
+                <!-- Boutons d'action -->
+                <div class="d-flex justify-content-end">
+                    <a href="{{ path('odoo_jit_order_info', { id: headInfo.id }) }}" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-times me-1"></i> Annuler
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Enregistrer les modifications
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    const binIdsByClient = {{ binIdsByClient|raw }};
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const clientId = document.querySelector('input[name="partner_id"]')?.value;
+    const binIdTable = document.getElementById('bin-id-table');
+    const addBinIdButton = document.getElementById('add-bin-id');
+    const tbody = document.querySelector('#bin-id-table tbody');
+    const form = document.querySelector('form');
+
+    // Fonction pour mettre à jour les options de Bin ID
+    function updateBinIdOptions(select) {
+        select.innerHTML = '<option value="">Sélectionnez un Bin ID</option>';
+
+        // Ajout des bins du client actuel
+        if (clientId && binIdsByClient[clientId]) {
+            binIdsByClient[clientId].bins.forEach(bin => {
+                const option = document.createElement('option');
+                option.value = bin.id;
+                option.textContent = bin.name;
+                select.appendChild(option);
+            });
+        }
+
+        // Ajout des bins sans client
+        if (binIdsByClient['no_client']) {
+            const optgroup = document.createElement('optgroup');
+            optgroup.label = 'Sans client';
+            binIdsByClient['no_client'].bins.forEach(bin => {
+                const option = document.createElement('option');
+                option.value = bin.id;
+                option.textContent = bin.name;
+                optgroup.appendChild(option);
+            });
+            select.appendChild(optgroup);
+        }
+    }
+
+    // Fonction pour vérifier les doublons
+    function checkDuplicateBinId(binId, currentRow) {
+        let isDuplicate = false;
+        const allRows = tbody.querySelectorAll('tr');
+        
+        allRows.forEach(row => {
+            if (row !== currentRow) {
+                const existingBinId = row.querySelector('input[name="existing_bin_ids[]"]')?.value ||
+                                    row.querySelector('select[name="new_bin_ids[]"]')?.value;
+                if (existingBinId === binId) {
+                    isDuplicate = true;
+                }
+            }
+        });
+        
+        return isDuplicate;
+    }
+
+    // Fonction pour mettre à jour les line_ids
+    function updateLineIds() {
+        const remainingLineIds = [];
+        tbody.querySelectorAll('input[name="line_ids[]"]').forEach(input => {
+            remainingLineIds.push(input.value);
+        });
+
+        // Supprime tous les anciens champs line_ids cachés
+        const existingHiddenInputs = form.querySelectorAll('input[name="line_ids[]"][type="hidden"]');
+        existingHiddenInputs.forEach(input => {
+            if (!input.closest('tr')) {
+                input.remove();
+            }
+        });
+    }
+
+    // Fonction pour ajouter une nouvelle ligne
+    function addBinIdRow() {
+        const newRow = document.createElement('tr');
+        newRow.innerHTML = `
+            <td>
+                <select name="new_bin_ids[]" class="form-control form-control-sm bin-id-select" required>
+                    <option value="">Sélectionnez un Bin ID</option>
+                </select>
+            </td>
+            <td>
+                <input type="number" name="new_quantities[]" class="form-control form-control-sm" value="1" min="1" required>
+            </td>
+            <td>
+                <button type="button" class="btn btn-sm btn-danger remove-bin-id">
+                    <i class="fas fa-trash me-1"></i> Supprimer
+                </button>
+            </td>
+        `;
+
+        const select = newRow.querySelector('.bin-id-select');
+        updateBinIdOptions(select);
+
+        // Gestion des doublons pour les nouvelles lignes
+        select.addEventListener('change', function() {
+            if (checkDuplicateBinId(this.value, newRow)) {
+                alert('Ce Bin ID existe déjà dans la commande !');
+                this.value = '';
+            }
+        });
+
+        tbody.appendChild(newRow);
+    }
+
+    // Gestionnaire d'événement pour le bouton d'ajout
+    if (addBinIdButton) {
+        addBinIdButton.addEventListener('click', addBinIdRow);
+    }
+
+    // Gestionnaire d'événement pour la suppression
+    if (tbody) {
+        tbody.addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-bin-id') || 
+                e.target.parentElement.classList.contains('remove-bin-id')) {
+                
+                const button = e.target.classList.contains('remove-bin-id') ? 
+                    e.target : e.target.parentElement;
+                const row = button.closest('tr');
+                
+                if (confirm('Êtes-vous sûr de vouloir supprimer cette ligne ?')) {
+                    row.remove();
+                    updateLineIds();
+                }
+            }
+        });
+    }
+
+    // Initialisation des select existants
+    document.querySelectorAll('.bin-id-select').forEach(select => {
+        updateBinIdOptions(select);
+        
+        // Gestion des doublons pour les selects existants
+        select.addEventListener('change', function() {
+            if (checkDuplicateBinId(this.value, select.closest('tr'))) {
+                alert('Ce Bin ID existe déjà dans la commande !');
+                this.value = '';
+            }
+        });
+    });
+
+    // Validation du formulaire avant envoi
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const allSelects = document.querySelectorAll('.bin-id-select');
+            let isValid = true;
+
+            allSelects.forEach(select => {
+                if (!select.value) {
+                    isValid = false;
+                }
+            });
+
+            if (!isValid) {
+                e.preventDefault();
+                alert('Veuillez sélectionner un Bin ID pour toutes les lignes.');
+                return;
+            }
+
+            updateLineIds();
+        });
+    }
+});
+</script>
+{% endblock %}
